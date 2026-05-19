@@ -71,9 +71,9 @@ src/
 
 
 # 생성형AI를 활용한 Activities (6 시간)
-1. [] 문제 코드 분석 및 코드 스멜 찾기 (1시간)
-- [] 기본 코드구조, BMI 로직 이해 
-- [] 코드 스멜 찾기 
+1. [x] 문제 코드 분석 및 코드 스멜 찾기 (1시간)
+- [x] 기본 코드구조, BMI 로직 이해 
+- [x] 코드 스멜 찾기 
 2. [] 1차 리펙토링 (클린코드 관점, 아래 내용을 순차적으로 수행) (1시간) 
 - [] 네이밍 개선
 - [] 하드코드 및 전역변수 제거 
@@ -96,6 +96,17 @@ src/
 - [] AI를 어떻게 활용했나? 도움이 된 순간과 한계는? 
 - [] TC를 추가보면서 개선에 미친 영향, TC 작성 팁
 - [] 클린코드와 리팩토링에서 느낀 장점과 어려운점
+
+
+## Activities 단계 완료 시 (Report / Prompt / Git)
+
+각 단계(1~5)를 마치면 Cursor에서 **`@activities-stage-delivery N단계 완료`** 로 에이전트를 호출한다.
+
+- `Report/stage0N-*.md` — 단계 보고서 (파일명 앞에 단계 번호 포함)
+- `Prompt/stage0N-*.md` — 대화 Export Transcript (Report와 **동일 파일명**, Markdown)
+- README 체크박스 `[x]` 갱신 후 Git commit · push
+
+자세한 사용법: [AGENTS.md](AGENTS.md)
 
 
 # 주의 사항
