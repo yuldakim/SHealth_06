@@ -1,35 +1,54 @@
-import csv
+"""S-Health BMI 파사드: 로딩·보정·계산·통계를 조율한다."""
+
+from age_group_imputer import AgeGroupImputer
+from bmi_analytics import BmiAnalytics
+from bmi_calculator import BmiCalculator
+from health_data_loader import HealthDataLoader
+from shealth_constants import (
+    ALL_BMI_CATEGORIES,
+    BmiCategory,
+    AgeGroupConfig,
+    BmiThresholds,
+    CENTIMETERS_PER_METER,
+    MISSING_VALUE,
+)
 
 
 class SHealth:
-    """S-Health BMI 계산 클래스"""
+    """S-Health BMI 계산·통계 파사드 (Activities 4단계 SRP 분리)."""
 
-    UNDERWEIGHT = 100
-    NORMALWEIGHT = 200
-    OVERWEIGHT = 300
-    OBESITY = 400
+    UNDERWEIGHT = BmiCategory.UNDERWEIGHT
+    NORMALWEIGHT = BmiCategory.NORMALWEIGHT
+    OVERWEIGHT = BmiCategory.OVERWEIGHT
+    OBESITY = BmiCategory.OBESITY
 
-    AGE_GROUP_START = 20
-    AGE_GROUP_STOP = 80
-    AGE_GROUP_STEP = 10
+    AGE_GROUP_START = AgeGroupConfig.START
+    AGE_GROUP_STOP = AgeGroupConfig.STOP
+    AGE_GROUP_STEP = AgeGroupConfig.STEP
 
-    MISSING_WEIGHT = 0.0
-    CENTIMETERS_PER_METER = 100.0
+    MISSING_WEIGHT = MISSING_VALUE
+    CENTIMETERS_PER_METER = CENTIMETERS_PER_METER
 
-    UNDERWEIGHT_MAX_BMI = 18.5
-    NORMAL_MAX_BMI = 23.0
-    OVERWEIGHT_MAX_BMI = 25.0
+    UNDERWEIGHT_MAX_BMI = BmiThresholds.UNDERWEIGHT_MAX
+    NORMAL_MAX_BMI = BmiThresholds.NORMAL_MAX
+    OVERWEIGHT_MAX_BMI = BmiThresholds.OVERWEIGHT_MAX
 
-    def __init__(self):
+    def __init__(self) -> None:
+        self._loader = HealthDataLoader()
+        self._imputer = AgeGroupImputer()
+        self._calculator = BmiCalculator()
+        self._analytics = BmiAnalytics(self._calculator)
         self._reset_data()
 
     def _reset_data(self) -> None:
         self.count = 0
-        self.ages = []
-        self.heights = []
-        self.weights = []
-        self.bmis = []
-        self._bmi_ratios = {}
+        self.user_ids: list[int] = []
+        self.ages: list[int] = []
+        self.heights: list[float] = []
+        self.weights: list[float] = []
+        self.bmis: list[float] = []
+        self._bmi_ratios: dict[tuple[int, int], float] = {}
+        self._overall_bmi_ratios: dict[int, float] = {}
 
     def calculate_bmi(self, filename: str) -> int:
         """파일에서 데이터를 읽어 BMI를 계산한다."""
@@ -39,8 +58,12 @@ class SHealth:
             return 0
 
         self._replace_missing_weights()
+        self._replace_missing_heights()
         self._calculate_bmis()
         self._calculate_bmi_ratios()
+        self._overall_bmi_ratios = self._analytics.overall_distribution(
+            self.bmis
+        )
 
         return self.count
 
@@ -48,23 +71,57 @@ class SHealth:
         """나이대와 BMI 유형에 따른 비율을 반환한다."""
         return self._bmi_ratios.get((age_class, bmi_type), 0.0)
 
+    def get_age_group_bmi_distribution(self, age_group: int) -> dict[int, float]:
+        """특정 연령대의 BMI 4분류 비율(%)을 반환한다."""
+        return self._analytics.age_group_distribution(
+            self.ages, self.bmis, age_group, self.AGE_GROUP_STEP
+        )
+
+    def get_overall_bmi_ratios(self) -> dict[int, float]:
+        """전체 사용자 대비 각 BMI 범주 비율(%)을 반환한다."""
+        return dict(self._overall_bmi_ratios)
+
+    def get_normal_weight_user_ids(self) -> list[int]:
+        """BMI 정상 범위 사용자 ID 목록."""
+        return self._analytics.normal_weight_user_ids(self.user_ids, self.bmis)
+
     def _load_records(self, filename: str) -> bool:
         try:
-            with open(filename, "r", newline="") as csv_file:
-                reader = csv.reader(csv_file)
-                next(reader)
-                for row in reader:
-                    if not row:
-                        continue
-                    self.ages.append(int(row[1]))
-                    self.weights.append(float(row[2]))
-                    self.heights.append(float(row[3]))
+            records = self._loader.load(filename)
         except FileNotFoundError:
             print(f"Failed to open file: {filename}")
             return False
 
+        self.user_ids = [record.user_id for record in records]
+        self.ages = [record.age for record in records]
+        self.weights = [record.weight for record in records]
+        self.heights = [record.height for record in records]
         self.count = len(self.ages)
         return True
+
+    def _replace_missing_weights(self) -> None:
+        self._imputer.impute_weights(self.ages, self.weights)
+
+    def _replace_missing_heights(self) -> None:
+        self._imputer.impute_heights(self.ages, self.heights)
+
+    def _calculate_bmis(self) -> None:
+        self.bmis = self._calculator.calculate_many(self.weights, self.heights)
+
+    def _calculate_bmi(self, weight: float, height: float) -> float:
+        return self._calculator.calculate(weight, height)
+
+    def _calculate_bmi_ratios(self) -> None:
+        self._bmi_ratios = self._analytics.build_age_group_ratios(
+            self.ages,
+            self.bmis,
+            self.AGE_GROUP_START,
+            self.AGE_GROUP_STOP,
+            self.AGE_GROUP_STEP,
+        )
+
+    def _classify_bmi(self, bmi: float) -> int:
+        return self._calculator.classify(bmi)
 
     def _age_groups(self):
         return range(
@@ -76,73 +133,7 @@ class SHealth:
     def _is_in_age_group(self, age: int, age_group: int) -> bool:
         return age_group <= age < age_group + self.AGE_GROUP_STEP
 
-    def _replace_missing_weights(self) -> None:
-        for age_group in self._age_groups():
-            average_weight = self._average_weight_for_age_group(age_group)
-            if average_weight == self.MISSING_WEIGHT:
-                continue
-
-            for index, age in enumerate(self.ages):
-                if (
-                    self._is_in_age_group(age, age_group)
-                    and self.weights[index] == self.MISSING_WEIGHT
-                ):
-                    self.weights[index] = average_weight
-
     def _average_weight_for_age_group(self, age_group: int) -> float:
-        known_weights = [
-            weight
-            for age, weight in zip(self.ages, self.weights)
-            if self._is_in_age_group(age, age_group)
-            and weight != self.MISSING_WEIGHT
-        ]
-
-        if not known_weights:
-            return self.MISSING_WEIGHT
-
-        return sum(known_weights) / len(known_weights)
-
-    def _calculate_bmis(self) -> None:
-        self.bmis = [
-            self._calculate_bmi(weight, height)
-            for weight, height in zip(self.weights, self.heights)
-        ]
-
-    def _calculate_bmi(self, weight: float, height: float) -> float:
-        height_in_meters = height / self.CENTIMETERS_PER_METER
-        return weight / (height_in_meters**2)
-
-    def _calculate_bmi_ratios(self) -> None:
-        for age_group in self._age_groups():
-            category_counts = self._count_bmi_categories(age_group)
-            total_count = sum(category_counts.values())
-            if total_count == 0:
-                continue
-
-            for bmi_type, category_count in category_counts.items():
-                self._bmi_ratios[(age_group, bmi_type)] = (
-                    category_count * 100 / total_count
-                )
-
-    def _count_bmi_categories(self, age_group: int) -> dict:
-        category_counts = {
-            self.UNDERWEIGHT: 0,
-            self.NORMALWEIGHT: 0,
-            self.OVERWEIGHT: 0,
-            self.OBESITY: 0,
-        }
-
-        for age, bmi in zip(self.ages, self.bmis):
-            if self._is_in_age_group(age, age_group):
-                category_counts[self._classify_bmi(bmi)] += 1
-
-        return category_counts
-
-    def _classify_bmi(self, bmi: float) -> int:
-        if bmi <= self.UNDERWEIGHT_MAX_BMI:
-            return self.UNDERWEIGHT
-        if bmi < self.NORMAL_MAX_BMI:
-            return self.NORMALWEIGHT
-        if bmi < self.OVERWEIGHT_MAX_BMI:
-            return self.OVERWEIGHT
-        return self.OBESITY
+        return self._imputer._average_for_age_group(
+            self.ages, self.weights, age_group
+        )

@@ -152,3 +152,93 @@ class TestBmiRatios:
 
     def test_unknown_age_group_returns_zero(self, shealth: SHealth) -> None:
         assert shealth.get_bmi_ratio(99, SHealth.NORMALWEIGHT) == 0.0
+
+
+class TestReplaceMissingHeights:
+    """나이대 평균 키 보정 (height == 0)."""
+
+    def test_missing_height_replaced_by_age_group_average(self, shealth: SHealth) -> None:
+        shealth.ages = [25, 25, 25]
+        shealth.heights = [160.0, 0.0, 180.0]
+        shealth.weights = [70.0, 70.0, 70.0]
+
+        shealth._replace_missing_heights()
+
+        assert shealth.heights[1] == pytest.approx(170.0)
+
+    def test_zero_height_excluded_from_average(self, shealth: SHealth) -> None:
+        shealth.ages = [25, 25, 25]
+        shealth.heights = [150.0, 0.0, 0.0]
+        shealth.weights = [70.0, 70.0, 70.0]
+
+        shealth._replace_missing_heights()
+
+        assert shealth.heights[1] == pytest.approx(150.0)
+        assert shealth.heights[2] == pytest.approx(150.0)
+
+
+class TestAgeGroupBmiDistribution:
+    """특정 연령대 BMI 분포 비율."""
+
+    def test_distribution_matches_get_bmi_ratio(
+        self, shealth: SHealth, tmp_path
+    ) -> None:
+        data_file = tmp_path / "age_group.dat"
+        data_file.write_text(
+            "id,age,weight,height\n"
+            "1,25,45.0,170.0\n"
+            "2,25,70.0,170.0\n"
+            "3,25,85.0,170.0\n",
+            encoding="utf-8",
+        )
+        shealth.calculate_bmi(str(data_file))
+
+        distribution = shealth.get_age_group_bmi_distribution(20)
+
+        assert distribution[SHealth.UNDERWEIGHT] == pytest.approx(
+            shealth.get_bmi_ratio(20, SHealth.UNDERWEIGHT)
+        )
+        assert sum(distribution.values()) == pytest.approx(100.0)
+
+
+class TestOverallBmiRatios:
+    """전체 사용자 BMI 범주 비율."""
+
+    def test_overall_ratios_sum_to_one_hundred(
+        self, shealth: SHealth, tmp_path
+    ) -> None:
+        data_file = tmp_path / "overall.dat"
+        data_file.write_text(
+            "id,age,weight,height\n"
+            "1,25,45.0,170.0\n"
+            "2,35,65.0,170.0\n"
+            "3,45,68.0,170.0\n"
+            "4,55,90.0,170.0\n",
+            encoding="utf-8",
+        )
+        shealth.calculate_bmi(str(data_file))
+
+        overall = shealth.get_overall_bmi_ratios()
+        assert sum(overall.values()) == pytest.approx(100.0)
+        assert overall[SHealth.NORMALWEIGHT] == pytest.approx(25.0)
+
+
+class TestNormalWeightUsers:
+    """BMI 정상 범위 사용자 목록."""
+
+    def test_returns_only_normal_category_ids(
+        self, shealth: SHealth, tmp_path
+    ) -> None:
+        data_file = tmp_path / "normal.dat"
+        data_file.write_text(
+            "id,age,weight,height\n"
+            "1,25,45.0,170.0\n"
+            "2,25,65.0,170.0\n"
+            "3,25,85.0,170.0\n",
+            encoding="utf-8",
+        )
+        shealth.calculate_bmi(str(data_file))
+
+        normal_ids = shealth.get_normal_weight_user_ids()
+
+        assert normal_ids == [2]
