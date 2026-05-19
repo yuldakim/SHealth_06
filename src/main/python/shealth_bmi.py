@@ -5,12 +5,17 @@ def main():
     shealth = SHealth()
     shealth.calculate_bmi("shealth.dat")
 
-    for age in range(20, 80, 10):
+    for age in range(
+        shealth.AGE_GROUP_START,
+        shealth.AGE_GROUP_STOP,
+        shealth.AGE_GROUP_STEP,
+    ):
         print(
-            f"{age} - underweight = {shealth.get_bmi_ratio(age, 100):.6f}, "
-            f"normal = {shealth.get_bmi_ratio(age, 200):.6f}, "
-            f"overweight = {shealth.get_bmi_ratio(age, 300):.6f}, "
-            f"obesity = {shealth.get_bmi_ratio(age, 400):.6f}"
+            f"{age} - underweight = "
+            f"{shealth.get_bmi_ratio(age, shealth.UNDERWEIGHT):.6f}, "
+            f"normal = {shealth.get_bmi_ratio(age, shealth.NORMALWEIGHT):.6f}, "
+            f"overweight = {shealth.get_bmi_ratio(age, shealth.OVERWEIGHT):.6f}, "
+            f"obesity = {shealth.get_bmi_ratio(age, shealth.OBESITY):.6f}"
         )
 
 
