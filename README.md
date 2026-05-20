@@ -37,19 +37,29 @@ venv\Scripts\activate
 # 가상환경 활성화 (macOS/Linux)
 source venv/bin/activate
 
-# 필요한 패키지 설치 (테스트용)
-pip install pytest
+# 필요한 패키지 설치 (테스트·커버리지)
+pip install pytest pytest-cov
 ```
 
 ### 실행
+프로젝트 **루트** 또는 `src/main/python` 어디서든 실행 가능합니다. `shealth.dat`는 루트에 두고, 로더가 `pathlib`로 루트·CWD를 순서대로 탐색합니다.
+
 ```bash
+# 프로젝트 루트에서 (권장)
+python src/main/python/shealth_bmi.py
+
+# 또는 모듈 디렉터리에서
 cd src/main/python
 python shealth_bmi.py
 ```
 
 ### 테스트 실행
 ```bash
-python -m pytest src/test/python/test_shealth_bmi.py -v
+# 전체 테스트
+python -m pytest src/test/python -v
+
+# 커버리지 (pytest-cov 필요)
+python -m pytest src/test/python --cov=src/main/python --cov-report=term-missing
 ```
 
 ### 가상환경 비활성화
@@ -60,13 +70,23 @@ deactivate
 
 ## 프로젝트 구조
 ```
-shealth.dat
+shealth.dat                 - 입력 데이터 (프로젝트 루트)
 src/
   main/python/
-    shealth.py           - SHealth 클래스 (BMI 계산 및 통계 로직 구현)
-    shealth_bmi.py       - main 함수 (프로그램 진입점)
+    shealth_constants.py    - BMI·나이대 상수
+    health_record.py        - 단일 사용자 레코드
+    health_data_loader.py   - CSV 로딩·경로 해석
+    age_group_imputer.py    - 체중·키 결측(0) 나이대 평균 보정
+    bmi_calculator.py       - BMI 계산·4분류
+    bmi_analytics.py        - 연령대/전체 비율·정상 사용자
+    shealth.py              - 파사드 (파이프라인 조율)
+    shealth_bmi.py          - CLI 진입점
   test/python/
-    test_shealth_bmi.py  - unittest 기반 단위 테스트
+    conftest.py             - sys.path·fixtures
+    test_bmi_calculator.py
+    test_age_group_imputer.py
+    test_health_data_loader.py
+    test_shealth_bmi.py     - SHealth public API·통합 스모크
 ```
 
 
@@ -96,11 +116,21 @@ src/
 - [x] AI를 어떻게 활용했나? 도움이 된 순간과 한계는? 
 - [x] TC를 추가보면서 개선에 미친 영향, TC 작성 팁
 - [x] 클린코드와 리팩토링에서 느낀 장점과 어려운점
-
+6. [x] 남은 단점 및 개선
+- [ ] `shealth.dat` CWD·루트 경로 일치 (`pathlib` 등)
+- [ ] 나이대 내 체중·키 전원 0 → BMI 0 나누기 가드·TC
+- [ ] `shealth.py` 미사용 메서드·`AgeGroupImputer` private 우회 제거
+- [ ] 파사드 private 래퍼·`BmiCategory` 이중 노출 정리
+- [ ] `BmiCalculator` / `AgeGroupImputer` / `HealthDataLoader` 모듈 단위 테스트
+- [ ] `SHealth` public API 위주 TC 보강
+- [ ] `pytest-cov` 실행·README에 커버리지 명령 반영
+- [ ] 비정상 CSV·결측 전원 0 등 극단·예외 TC
+- [ ] `shealth.dat` 통합 스모크 TC
+- [ ] README 프로젝트 구조·실행·pytest 안내를 현재 코드와 동기화
 
 ## Activities 단계 완료 시 (Report / Prompt / Git)
 
-각 단계(1~5)를 마치면 Cursor에서 **`@activities-stage-delivery N단계 완료`** 로 에이전트를 호출한다.
+각 단계(1~6)를 마치면 Cursor에서 **`@activities-stage-delivery N단계 완료`** 로 에이전트를 호출한다.
 
 - `Report/stage0N-*.md` — 단계 보고서 (파일명 앞에 단계 번호 포함)
 - `Prompt/stage0N-*.md` — 대화 Export Transcript (Report와 **동일 파일명**, Markdown)
