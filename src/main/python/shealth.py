@@ -4,34 +4,11 @@ from age_group_imputer import AgeGroupImputer
 from bmi_analytics import BmiAnalytics
 from bmi_calculator import BmiCalculator
 from health_data_loader import HealthDataLoader
-from shealth_constants import (
-    ALL_BMI_CATEGORIES,
-    BmiCategory,
-    AgeGroupConfig,
-    BmiThresholds,
-    CENTIMETERS_PER_METER,
-    MISSING_VALUE,
-)
+from shealth_constants import AgeGroupConfig
 
 
 class SHealth:
     """S-Health BMI 계산·통계 파사드 (Activities 4단계 SRP 분리)."""
-
-    UNDERWEIGHT = BmiCategory.UNDERWEIGHT
-    NORMALWEIGHT = BmiCategory.NORMALWEIGHT
-    OVERWEIGHT = BmiCategory.OVERWEIGHT
-    OBESITY = BmiCategory.OBESITY
-
-    AGE_GROUP_START = AgeGroupConfig.START
-    AGE_GROUP_STOP = AgeGroupConfig.STOP
-    AGE_GROUP_STEP = AgeGroupConfig.STEP
-
-    MISSING_WEIGHT = MISSING_VALUE
-    CENTIMETERS_PER_METER = CENTIMETERS_PER_METER
-
-    UNDERWEIGHT_MAX_BMI = BmiThresholds.UNDERWEIGHT_MAX
-    NORMAL_MAX_BMI = BmiThresholds.NORMAL_MAX
-    OVERWEIGHT_MAX_BMI = BmiThresholds.OVERWEIGHT_MAX
 
     def __init__(self) -> None:
         self._loader = HealthDataLoader()
@@ -74,7 +51,7 @@ class SHealth:
     def get_age_group_bmi_distribution(self, age_group: int) -> dict[int, float]:
         """특정 연령대의 BMI 4분류 비율(%)을 반환한다."""
         return self._analytics.age_group_distribution(
-            self.ages, self.bmis, age_group, self.AGE_GROUP_STEP
+            self.ages, self.bmis, age_group, AgeGroupConfig.STEP
         )
 
     def get_overall_bmi_ratios(self) -> dict[int, float]:
@@ -90,6 +67,9 @@ class SHealth:
             records = self._loader.load(filename)
         except FileNotFoundError:
             print(f"Failed to open file: {filename}")
+            return False
+        except ValueError as exc:
+            print(f"Failed to parse file: {filename} — {exc}")
             return False
 
         self.user_ids = [record.user_id for record in records]
@@ -108,32 +88,11 @@ class SHealth:
     def _calculate_bmis(self) -> None:
         self.bmis = self._calculator.calculate_many(self.weights, self.heights)
 
-    def _calculate_bmi(self, weight: float, height: float) -> float:
-        return self._calculator.calculate(weight, height)
-
     def _calculate_bmi_ratios(self) -> None:
         self._bmi_ratios = self._analytics.build_age_group_ratios(
             self.ages,
             self.bmis,
-            self.AGE_GROUP_START,
-            self.AGE_GROUP_STOP,
-            self.AGE_GROUP_STEP,
-        )
-
-    def _classify_bmi(self, bmi: float) -> int:
-        return self._calculator.classify(bmi)
-
-    def _age_groups(self):
-        return range(
-            self.AGE_GROUP_START,
-            self.AGE_GROUP_STOP,
-            self.AGE_GROUP_STEP,
-        )
-
-    def _is_in_age_group(self, age: int, age_group: int) -> bool:
-        return age_group <= age < age_group + self.AGE_GROUP_STEP
-
-    def _average_weight_for_age_group(self, age_group: int) -> float:
-        return self._imputer._average_for_age_group(
-            self.ages, self.weights, age_group
+            AgeGroupConfig.START,
+            AgeGroupConfig.STOP,
+            AgeGroupConfig.STEP,
         )

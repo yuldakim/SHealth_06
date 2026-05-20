@@ -11,6 +11,8 @@ class BmiCalculator:
     """체중·키(cm)로 BMI를 계산하고 범주로 분류한다."""
 
     def calculate(self, weight: float, height_cm: float) -> float:
+        if weight <= 0 or height_cm <= 0:
+            return 0.0
         height_m = height_cm / CENTIMETERS_PER_METER
         return weight / (height_m**2)
 

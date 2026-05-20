@@ -1,0 +1,38 @@
+{
+  "1": {
+    "slug": "code-analysis",
+    "title": "문제 코드 분석 및 코드 스멜 찾기",
+    "readme_main": "1. \\[\\] 문제 코드 분석 및 코드 스멜 찾기",
+    "readme_done_main": "1. [x] 문제 코드 분석 및 코드 스멜 찾기"
+  },
+  "2": {
+    "slug": "first-refactoring",
+    "title": "1차 리펙토링",
+    "readme_main": "2. \\[\\] 1차 리펙토링",
+    "readme_done_main": "2. [x] 1차 리펙토링"
+  },
+  "3": {
+    "slug": "unit-test",
+    "title": "UnitTest 작성",
+    "readme_main": "3. \\[\\] UnitTest 작성",
+    "readme_done_main": "3. [x] UnitTest 작성"
+  },
+  "4": {
+    "slug": "feature-improvement",
+    "title": "기능 개선",
+    "readme_main": "4. \\[\\] 기능 개선",
+    "readme_done_main": "4. [x] 기능 개선"
+  },
+  "5": {
+    "slug": "retrospective",
+    "title": "회고 및 발표",
+    "readme_main": "5. \\[\\] 회고 및 발표",
+    "readme_done_main": "5. [x] 회고 및 발표"
+  },
+  "6": {
+    "slug": "remaining-improvements",
+    "title": "남은 단점 및 개선",
+    "readme_main": "6. \\[\\] 남은 단점 및 개선",
+    "readme_done_main": "6. [x] 남은 단점 및 개선"
+  }
+}
