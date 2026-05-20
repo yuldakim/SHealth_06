@@ -117,16 +117,16 @@ src/
 - [x] TC를 추가보면서 개선에 미친 영향, TC 작성 팁
 - [x] 클린코드와 리팩토링에서 느낀 장점과 어려운점
 6. [x] 남은 단점 및 개선
-- [ ] `shealth.dat` CWD·루트 경로 일치 (`pathlib` 등)
-- [ ] 나이대 내 체중·키 전원 0 → BMI 0 나누기 가드·TC
-- [ ] `shealth.py` 미사용 메서드·`AgeGroupImputer` private 우회 제거
-- [ ] 파사드 private 래퍼·`BmiCategory` 이중 노출 정리
-- [ ] `BmiCalculator` / `AgeGroupImputer` / `HealthDataLoader` 모듈 단위 테스트
-- [ ] `SHealth` public API 위주 TC 보강
-- [ ] `pytest-cov` 실행·README에 커버리지 명령 반영
-- [ ] 비정상 CSV·결측 전원 0 등 극단·예외 TC
-- [ ] `shealth.dat` 통합 스모크 TC
-- [ ] README 프로젝트 구조·실행·pytest 안내를 현재 코드와 동기화
+- [x] `shealth.dat` CWD·루트 경로 일치 (`pathlib` 등)
+- [x] 나이대 내 체중·키 전원 0 → BMI 0 나누기 가드·TC
+- [x] `shealth.py` 미사용 메서드·`AgeGroupImputer` private 우회 제거
+- [x] 파사드 private 래퍼·`BmiCategory` 이중 노출 정리
+- [x] `BmiCalculator` / `AgeGroupImputer` / `HealthDataLoader` 모듈 단위 테스트
+- [x] `SHealth` public API 위주 TC 보강
+- [x] `pytest-cov` 실행·README에 커버리지 명령 반영
+- [x] 비정상 CSV·결측 전원 0 등 극단·예외 TC
+- [x] `shealth.dat` 통합 스모크 TC
+- [x] README 프로젝트 구조·실행·pytest 안내를 현재 코드와 동기화
 
 ## Activities 단계 완료 시 (Report / Prompt / Git)
 

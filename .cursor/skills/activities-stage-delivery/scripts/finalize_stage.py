@@ -82,7 +82,7 @@ def mark_readme_stage_done(readme: Path, stage: int, stages: dict[str, dict[str,
 
     block = text[start:end]
     block = block.replace(stage_header, stage_done, 1)
-    block = re.sub(r"- \[\]", "- [x]", block)
+    block = re.sub(r"- \[ \]", "- [x]", block)
     text = text[:start] + block + text[end:]
 
     if text == original:
